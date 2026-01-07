@@ -1,9 +1,9 @@
 import folium
 import pandas as pd
 import json
-from branca.element import IFrame, Element
+from branca.element import Element
 
-# --- 1. SETTINGS & COLORS (READOLO Brand Integration) ---
+# --- 1. SETTINGS & COLORS ---
 division_colors = {
     'Dhaka': '#1a1a1a', 'Chattogram': '#CC0000', 'Rajshahi': '#008573',
     'Khulna': '#D4A017', 'Sylhet': '#6D4C41', 'Barishal': '#2E7D32',
@@ -11,7 +11,6 @@ division_colors = {
 }
 
 # --- 2. LOAD DATA ---
-# This part stays exactly as you had it to ensure your CSV connects
 df = pd.read_csv('candidates.csv')
 grouped_data = {dist: group.to_dict('records') for dist, group in df.groupby('parent_district')}
 dist_to_div = df.set_index('parent_district')['divisions'].to_dict()
@@ -19,137 +18,191 @@ dist_to_div = df.set_index('parent_district')['divisions'].to_dict()
 with open('Bangladesh_map.geojson', 'r') as f:
     geojson_data = json.load(f)
 
-# --- 3. MODAL DESIGN (READOLO Branded Popups) ---
-def get_modal_html(dist_name, seats):
-    seat_html = ""
-    for seat in seats:
-        candidates_block = ""
-        for i in range(1, 6):
-            name = seat.get(f'Candidate_{i}', 'N/A')
-            img_url = seat.get(f'Img_{i}', 'https://placehold.co/300x300/cccccc/969696.png?text=Marka')
-            candidates_block += f"""
-            <div style="text-align:center; padding:10px; border:1px solid #eee; background:#fff;">
-                <img src="{img_url}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; margin-bottom:5px;">
-                <div style="font-size:10px; font-weight:700; color:#1a1a1a; line-height:1.2;">{name}</div>
-            </div>"""
+# --- 3. INITIALIZE MAP (No Tiles, No Zoom Control) ---
+m = folium.Map(
+    location=[23.8, 90.3],
+    zoom_start=6,
+    tiles=None,
+    zoom_control=False,
+    scrollWheelZoom=False
+)
 
-        seat_html += f"""
-        <div style="margin-bottom:20px; border-top: 4px solid #1a1a1a; padding-top:10px;">
-            <div style="font-size:13px; font-weight:800; text-transform:uppercase; color:#CC0000; margin-bottom:8px;">
-                {seat['constituency']}
-            </div>
-            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
-                {candidates_block}
-            </div>
-        </div>"""
+# --- 4. PREPARE DATA FOR JS ---
+data_json = json.dumps(grouped_data)
 
-    return f"""<div style="font-family:'Inter', sans-serif; min-width:320px; max-height:400px; overflow-y:auto; padding-right:10px;">
-                <h2 style="font-size:22px; font-weight:800; letter-spacing:-1px; margin:0 0 15px 0; color:#1a1a1a;">{dist_name}</h2>
-                {seat_html}
-               </div>"""
+# Add GeoJSON to the map
+geojson_layer = folium.GeoJson(
+    geojson_data,
+    style_function=lambda feature: {
+        'fillColor': division_colors.get(dist_to_div.get(feature['properties'].get('shapeName'), 'Unknown'), "#808080"),
+        'color': 'white',
+        'weight': 1,
+        'fillOpacity': 0.7
+    },
+    highlight_function=lambda x: {'fillColor': '#333', 'fillOpacity': 0.9}
+).add_to(m)
 
-# --- 4. BUILD THE MAP & INJECT DATA ---
-m = folium.Map(location=[23.8, 90.3], zoom_start=7, tiles='CartoDB positron')
-
-for feature in geojson_data['features']:
-    dist_name = feature['properties'].get('shapeName', 'Unknown')
-    seats = grouped_data.get(dist_name, [])
-    div_name = dist_to_div.get(dist_name, "Unknown")
-    fill_color = division_colors.get(div_name, "#808080")
-
-    if seats:
-        html_content = get_modal_html(dist_name, seats)
-        popup_html = folium.Html(html_content, script=True)
-        popup = folium.Popup(popup_html, max_width='90%')
-    else:
-        popup = folium.Popup(f"Data pending for {dist_name}")
-
-    folium.GeoJson(
-        feature,
-        tooltip=f"<b>{dist_name}</b>",
-        popup=popup,
-        style_function=lambda x, fc=fill_color: {
-            'fillColor': fc, 'color': 'white', 'weight': 1, 'fillOpacity': 0.7
-        },
-        highlight_function=lambda x: {'fillColor': '#333', 'fillOpacity': 0.9}
-    ).add_to(m)
-
-# --- 5. THE SIDEBAR & CSS OVERRIDE ---
-sidebar_content = """
-<div id="sidebar">
-    <div class="badge">Intelligence</div>
-    <h1>READ<span>OLO.</span></h1>
-    <h2>Bangladesh 2026 Election Tracker</h2>
-    <p>Advanced election insights and verified candidate mapping for the 2026 cycle.</p>
-
-    <div style="display: flex; gap: 10px; margin: 20px 0;">
-        <div class="stats-card" style="flex:1;">
-            <div class="stats-val">300</div>
-            <div class="stats-label">Total Seats</div>
-        </div>
-        <div class="stats-card" style="flex:1; border-left-color: #CC0000;">
-            <div class="stats-val">64</div>
-            <div class="stats-label">Districts</div>
-        </div>
-    </div>
-
-    <div class="division-legend">
-        <h4 class="section-title">Regional Divisions</h4>
-        <div class="legend-grid">
-            <div class="legend-item"><span style="background: #1a1a1a;"></span> Dhaka</div>
-            <div class="legend-item"><span style="background: #CC0000;"></span> Chattogram</div>
-            <div class="legend-item"><span style="background: #008573;"></span> Rajshahi</div>
-            <div class="legend-item"><span style="background: #D4A017;"></span> Khulna</div>
-            <div class="legend-item"><span style="background: #6D4C41;"></span> Sylhet</div>
-            <div class="legend-item"><span style="background: #2E7D32;"></span> Barishal</div>
-            <div class="legend-item"><span style="background: #C62828;"></span> Rangpur</div>
-            <div class="legend-item"><span style="background: #7B1FA2;"></span> Mymensingh</div>
-        </div>
-    </div>
-
-    <div class="footer-text">
-        © 2026 READOLO Consulting. Unauthorized reproduction of data prohibited.
-    </div>
-</div>
-"""
-
-layout_css = """
+# --- 5. CUSTOM HTML STRUCTURE ---
+# --- 5. UPDATED CUSTOM UI & FIXES ---
+custom_ui = f"""
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-    body { display: flex; flex-direction: row; margin: 0; height: 100vh; width: 100vw; overflow: hidden; font-family: 'Inter', sans-serif; }
-    #sidebar {
-        width: 380px; height: 100vh; background: white; box-shadow: 10px 0 30px rgba(0,0,0,0.05);
-        z-index: 9999; padding: 40px 30px; display: flex; flex-direction: column; box-sizing: border-box; overflow-y: auto;
-    }
-    .folium-map { flex-grow: 1 !important; height: 100% !important; position: relative !important; }
+    :root {{ --primary: #CC0000; --dark: #1a1a1a; }}
+    body {{ font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f8fafc; overflow-x: hidden; }}
 
-    h1 { font-size: 28px; font-weight: 800; color: #1a1a1a; letter-spacing: -1.5px; margin: 15px 0; line-height: 1; }
-    h1 span { color: #CC0000; font-weight: 300; }
-    .badge { background: #CC0000; color: white; padding: 4px 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; width: fit-content; }
-    .stats-card { background: #f4f4f4; border-left: 4px solid #1a1a1a; padding: 20px; }
-    .stats-val { font-size: 24px; font-weight: 800; color: #1a1a1a; }
-    .stats-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-    .section-title { font-size: 12px; border-left: 3px solid #CC0000; padding-left: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; margin-bottom: 15px; }
-    .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .legend-item { font-size: 11px; font-weight: 600; display: flex; align-items: center; }
-    .legend-item span { width: 12px; height: 12px; margin-right: 8px; border-radius: 2px; }
-    .footer-text { margin-top: auto; padding-top: 20px; font-size: 10px; color: #ccc; border-top: 1px solid #eee; }
+    .page-container {{ max-width: 1000px; margin: 0 auto; padding: 20px; }}
 
-    /* Fix Leaflet Popup Scrollbar */
-    .leaflet-popup-content { margin: 15px; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+    header {{ margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }}
+    h1 {{ font-size: 32px; font-weight: 800; color: var(--dark); margin: 0; letter-spacing: -1.5px; }}
+    h1 span {{ color: var(--primary); font-weight: 300; }}
 
-    @media (max-width: 768px) {
-        body { flex-direction: column; overflow: auto; }
-        #sidebar { width: 100%; height: auto; min-height: fit-content; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .folium-map { height: 60vh !important; width: 100% !important; }
-    }
+    /* Containerized Map Fixes */
+    #map-wrapper {{
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+        border: 1px solid #e2e8f0;
+        background: white;
+        margin-bottom: 20px;
+        box-sizing: border-box; /* Fixes the 'cut off' edge */
+    }}
+
+    /* This forces the map to fill the container properly */
+    .folium-map {{
+        height: 550px !important;
+        width: 100% !important;
+        position: relative !important;
+        display: block;
+    }}
+
+    /* The Bottom Sheet */
+    #details-panel {{
+        position: fixed; bottom: -100%; left: 0; right: 0;
+        background: white; z-index: 10000; padding: 30px;
+        border-top-left-radius: 25px; border-top-right-radius: 25px;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+        transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        max-height: 80vh; overflow-y: auto;
+    }}
+    #details-panel.active {{ bottom: 0; }}
+
+    .close-btn {{
+        float: right; background: #f1f1f1; border: none; padding: 10px 20px;
+        border-radius: 30px; cursor: pointer; font-weight: 800; font-size: 12px;
+    }}
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {{
+        .folium-map {{ height: 450px !important; }}
+        .page-container {{ padding: 15px; }}
+    }}
 </style>
+<div id="nav-placeholder"></div>
+<div class="page-container">
+    <header>
+        <div style="background: var(--primary); color: white; padding: 4px 12px; font-size: 10px; font-weight: 800; width: fit-content; margin-bottom: 10px;">INTELLIGENCE</div>
+        <h1>READ<span>OLO.</span></h1>
+        <p>Bangladesh 2026 Election Tracker: Advanced Regional Mapping</p>
+    </header>
+
+    <div id="map-wrapper">
+        </div>
+
+    <div style="padding: 15px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 13px; color: #64748b; line-height: 1.5;">
+        <strong>Navigation:</strong> Use one finger to scroll the page. Use <b>two fingers</b> to move the map. Tap any district to view candidates.
+    </div>
+</div>
+
+<div id="details-panel">
+    <button class="close-btn" onclick="closePanel()">CLOSE</button>
+    <div id="panel-body"></div>
+</div>
+
+<div id="footer-placeholder"></div>
+<script src="../script.js"></script>
+
+<script>
+    const electionData = {data_json};
+
+    function closePanel() {{
+        document.getElementById('details-panel').classList.remove('active');
+    }}
+
+    document.addEventListener("DOMContentLoaded", function() {{
+        const mapElement = document.querySelector('.folium-map');
+        const mapObject = window[mapElement.id];
+        const wrapper = document.getElementById('map-wrapper');
+
+        // Move map into wrapper
+        wrapper.appendChild(mapElement);
+
+        // --- THE CENTERING & OVERFLOW FIX ---
+        setTimeout(() => {{
+            mapObject.invalidateSize(); // Forces map to re-check its container size
+
+            // Re-center and zoom to the Bangladesh shapes
+            const geoLayer = window['{geojson_layer.get_name()}'];
+            if (geoLayer) {{
+                mapObject.fitBounds(geoLayer.getBounds(), {{ padding: [20, 20] }});
+            }}
+        }}, 300);
+
+        // Two-finger scroll for mobile
+        if (L.Browser.mobile) {{
+            mapObject.dragging.disable();
+            mapObject.on('touchstart', function(e) {{
+                if (e.originalEvent.touches.length >= 2) mapObject.dragging.enable();
+                else mapObject.dragging.disable();
+            }});
+        }}
+
+        // Click detection for shapes
+        const geoLayer = window['{geojson_layer.get_name()}'];
+        geoLayer.on('click', function(e) {{
+            const distName = e.layer.feature.properties.shapeName;
+            const seats = electionData[distName] || [];
+            showDetails(distName, seats);
+            L.DomEvent.stopPropagation(e);
+        }});
+    }});
+
+    function showDetails(distName, seats) {{
+        const panel = document.getElementById('details-panel');
+        const body = document.getElementById('panel-body');
+
+        let html = `<h2 style="margin-top:0; font-size:26px; letter-spacing:-1px;">${{distName}}</h2>`;
+
+        if(seats.length === 0) {{
+            html += "<p>Candidate verification in progress...</p>";
+        }} else {{
+            seats.forEach(seat => {{
+                html += `
+                <div style="margin-bottom: 25px; border-top: 1px solid #eee; padding-top: 15px;">
+                    <div style="color:var(--primary); font-weight:800; text-transform:uppercase; font-size:12px; margin-bottom:10px;">${{seat.constituency}}</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">`;
+
+                for(let i=1; i<=5; i++) {{
+                    const name = seat['Candidate_' + i];
+                    const img = seat['Img_' + i] || 'https://placehold.co/100x100?text=Marka';
+                    if(name && name !== 'N/A') {{
+                        html += `
+                        <div style="text-align:center; border:1px solid #f1f5f9; padding:8px; border-radius:8px;">
+                            <img src="${{img}}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; margin-bottom:5px;">
+                            <div style="font-size:10px; font-weight:700; color:var(--dark);">${{name}}</div>
+                        </div>`;
+                    }}
+                }}
+                html += `</div></div>`;
+            }});
+        }}
+
+        body.innerHTML = html;
+        panel.classList.add('active');
+    }}
+</script>
 """
 
-# --- 6. FINAL ASSEMBLY ---
-m.get_root().header.add_child(Element(layout_css))
-m.get_root().html.add_child(Element(sidebar_content))
-
+# --- 6. ASSEMBLE ---
+m.get_root().html.add_child(Element(custom_ui))
 m.save("bangladesh-election-2026.html")
