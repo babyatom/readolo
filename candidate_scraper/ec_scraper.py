@@ -24,7 +24,16 @@ CANDIDATE_TYPE = 1  # Member of Parliament
 STATUS_ID = 12  # 12=Valid candidates (use None for all)
 OUTPUT_FILE = "../python_map/candidates.csv"
 MAPPING_FILE = "district_division_mapping.json"
+SYMBOLS_FILE = "party_symbols.json"
 DELAY_SECONDS = 0.5  # Delay between API calls
+MAX_CANDIDATES = 15  # Max candidates per constituency (actual max is 14)
+
+# District name fixes to match GeoJSON spellings
+DISTRICT_NAME_FIXES = {
+    'Brahmanbaria': 'Brahamanbaria',
+    'Moulvibazar': 'Maulvibazar',
+    'Netrokona': 'Netrakona'
+}
 # ---------------------
 
 
@@ -56,6 +65,30 @@ def load_division_mapping():
                 'district_en': district_name
             }
     return mapping
+
+
+def load_party_symbols():
+    """Load party name to symbol URL mapping"""
+    try:
+        with open(SYMBOLS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Warning: {SYMBOLS_FILE} not found, using candidate photos")
+        return {}
+
+
+def get_symbol_for_party(party_name, party_symbols):
+    """Get symbol URL for a party, returns empty string if not found"""
+    import unicodedata
+    # Try direct match first
+    if party_name in party_symbols:
+        return party_symbols[party_name]
+    # Try normalized match (handles Bengali Unicode variations)
+    norm_name = unicodedata.normalize('NFC', party_name)
+    for key, url in party_symbols.items():
+        if unicodedata.normalize('NFC', key) == norm_name:
+            return url
+    return ''
 
 
 def get_districts():
@@ -166,6 +199,11 @@ def main():
     division_mapping = load_division_mapping()
     print(f"✓ Loaded mapping for {len(division_mapping)} districts")
 
+    # Load party symbols
+    print("\nLoading party symbols...")
+    party_symbols = load_party_symbols()
+    print(f"✓ Loaded {len(party_symbols)} party symbol mappings")
+
     # Fetch all districts
     print("\nFetching districts...")
     districts = get_districts()
@@ -184,6 +222,9 @@ def main():
         mapping = division_mapping.get(zilla_id, {})
         division = mapping.get('division', 'Unknown')
         district_en = mapping.get('district_en', zilla_name_bn)
+
+        # Apply district name fixes to match GeoJSON
+        district_en = DISTRICT_NAME_FIXES.get(district_en, district_en)
 
         print(f"\n[{i+1}/{len(districts)}] {district_en} ({division})")
 
@@ -219,12 +260,17 @@ def main():
                 'divisions': division,
             }
 
-            # Add candidates (up to 5)
-            for j in range(5):
+            # Add candidates (up to MAX_CANDIDATES)
+            for j in range(MAX_CANDIDATES):
                 if j < len(candidates):
+                    party = candidates[j]['party']
+                    # Use party symbol if available, otherwise use candidate photo
+                    symbol_url = get_symbol_for_party(party, party_symbols)
+                    img_url = symbol_url if symbol_url else candidates[j]['img']
+
                     row[f'Candidate_{j+1}'] = candidates[j]['name']
-                    row[f'Party_{j+1}'] = candidates[j]['party']
-                    row[f'Img_{j+1}'] = candidates[j]['img']
+                    row[f'Party_{j+1}'] = party
+                    row[f'Img_{j+1}'] = img_url
                 else:
                     row[f'Candidate_{j+1}'] = ''
                     row[f'Party_{j+1}'] = ''
@@ -236,12 +282,10 @@ def main():
     columns = [
         'Districts', 'District Name Clean', 'Electoral Name Clean',
         'constituency', 'url', 'parent_district', 'divisions',
-        'Candidate_1', 'Party_1', 'Img_1',
-        'Candidate_2', 'Party_2', 'Img_2',
-        'Candidate_3', 'Party_3', 'Img_3',
-        'Candidate_4', 'Party_4', 'Img_4',
-        'Candidate_5', 'Party_5', 'Img_5',
     ]
+    # Add candidate columns dynamically
+    for i in range(1, MAX_CANDIDATES + 1):
+        columns.extend([f'Candidate_{i}', f'Party_{i}', f'Img_{i}'])
 
     df = pd.DataFrame(all_rows, columns=columns)
 

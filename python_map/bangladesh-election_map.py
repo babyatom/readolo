@@ -182,14 +182,16 @@ custom_ui = f"""
                     <div style="color:var(--primary); font-weight:800; text-transform:uppercase; font-size:12px; margin-bottom:10px;">${{seat.constituency}}</div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">`;
 
-                for(let i=1; i<=5; i++) {{
+                for(let i=1; i<=15; i++) {{
                     const name = seat['Candidate_' + i];
+                    const party = seat['Party_' + i] || '';
                     const img = seat['Img_' + i] || 'https://placehold.co/100x100?text=Marka';
                     if(name && name !== 'N/A') {{
                         html += `
                         <div style="text-align:center; border:1px solid #f1f5f9; padding:8px; border-radius:8px;">
-                            <img src="${{img}}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; margin-bottom:5px;">
+                            <img src="${{img}}" style="width:50px; height:50px; object-fit:contain; margin-bottom:5px;">
                             <div style="font-size:10px; font-weight:700; color:var(--dark);">${{name}}</div>
+                            <div style="font-size:8px; color:#666; margin-top:2px;">${{party}}</div>
                         </div>`;
                     }}
                 }}
