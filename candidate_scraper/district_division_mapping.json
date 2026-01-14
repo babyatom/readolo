@@ -1,0 +1,108 @@
+{
+  "divisions": {
+    "Dhaka": {
+      "color": "#1a1a1a",
+      "districts": {
+        "55": "Dhaka",
+        "52": "Gazipur",
+        "54": "Narayanganj",
+        "53": "Narsingdi",
+        "50": "Manikganj",
+        "51": "Munshiganj",
+        "44": "Tangail",
+        "49": "Kishoreganj",
+        "60": "Faridpur",
+        "59": "Rajbari",
+        "56": "Gopalganj",
+        "57": "Madaripur",
+        "58": "Shariatpur"
+      }
+    },
+    "Chattogram": {
+      "color": "#CC0000",
+      "districts": {
+        "8": "Chittagong",
+        "9": "Cox's Bazar",
+        "17": "Comilla",
+        "14": "Feni",
+        "15": "Noakhali",
+        "16": "Lakshmipur",
+        "12": "Brahmanbaria",
+        "13": "Chandpur",
+        "10": "Khagrachhari",
+        "11": "Rangamati",
+        "7": "Bandarban"
+      }
+    },
+    "Rajshahi": {
+      "color": "#008573",
+      "districts": {
+        "30": "Rajshahi",
+        "27": "Bogra",
+        "33": "Pabna",
+        "29": "Naogaon",
+        "31": "Natore",
+        "28": "Nawabganj",
+        "32": "Sirajganj",
+        "26": "Joypurhat"
+      }
+    },
+    "Khulna": {
+      "color": "#D4A017",
+      "districts": {
+        "42": "Khulna",
+        "38": "Jessore",
+        "43": "Satkhira",
+        "41": "Bagerhat",
+        "40": "Narail",
+        "39": "Magura",
+        "35": "Kushtia",
+        "36": "Chuadanga",
+        "34": "Meherpur",
+        "37": "Jhenaidah"
+      }
+    },
+    "Sylhet": {
+      "color": "#6D4C41",
+      "districts": {
+        "62": "Sylhet",
+        "63": "Moulvibazar",
+        "64": "Habiganj",
+        "61": "Sunamganj"
+      }
+    },
+    "Barishal": {
+      "color": "#2E7D32",
+      "districts": {
+        "2": "Barisal",
+        "5": "Patuakhali",
+        "3": "Bhola",
+        "6": "Pirojpur",
+        "1": "Barguna",
+        "4": "Jhalokati"
+      }
+    },
+    "Rangpur": {
+      "color": "#C62828",
+      "districts": {
+        "23": "Rangpur",
+        "20": "Dinajpur",
+        "21": "Nilphamari",
+        "24": "Kurigram",
+        "22": "Lalmonirhat",
+        "25": "Gaibandha",
+        "19": "Thakurgaon",
+        "18": "Panchagarh"
+      }
+    },
+    "Mymensingh": {
+      "color": "#7B1FA2",
+      "districts": {
+        "47": "Mymensingh",
+        "45": "Jamalpur",
+        "48": "Netrokona",
+        "46": "Sherpur"
+      }
+    }
+  }
+}
