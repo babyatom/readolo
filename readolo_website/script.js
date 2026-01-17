@@ -10,13 +10,6 @@ async function injectComponent(elementId, filePath) {
     }
 }
 
-// Run this when the page loads
-window.addEventListener('DOMContentLoaded', () => {
-    injectComponent('nav-placeholder', '/components/nav.html');
-    injectComponent('footer-placeholder', '/components/footer.html');
-});
-
-
 // Insert email safely (bot-resistant)
 function injectEmail() {
     const emailEl = document.getElementById("email");
