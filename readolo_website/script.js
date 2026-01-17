@@ -15,3 +15,8 @@ window.addEventListener('DOMContentLoaded', () => {
     injectComponent('nav-placeholder', '/components/nav.html');
     injectComponent('footer-placeholder', '/components/footer.html');
 });
+
+
+  const user = "hello";
+  const domain = "readolo.com";
+  document.getElementById("email").textContent = user + "@" + domain;
