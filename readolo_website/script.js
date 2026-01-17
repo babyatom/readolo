@@ -17,6 +17,21 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 
-  const user = "hello";
-  const domain = "readolo.com";
-  document.getElementById("email").textContent = user + "@" + domain;
+// Insert email safely (bot-resistant)
+function injectEmail() {
+    const emailEl = document.getElementById("email");
+    if (!emailEl) return;
+
+    const user = "hello";
+    const domain = "readolo.com";
+    emailEl.textContent = `${user}@${domain}`;
+}
+
+// Run this when the page loads
+window.addEventListener('DOMContentLoaded', async () => {
+    await injectComponent('nav-placeholder', '/components/nav.html');
+    await injectComponent('footer-placeholder', '/components/footer.html');
+
+    // Run AFTER components load
+    injectEmail();
+});
