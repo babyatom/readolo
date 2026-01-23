@@ -77,18 +77,42 @@ def load_symbol_images():
         return {}
 
 
+def normalize_bengali(text):
+    """
+    Normalize Bengali text for consistent matching.
+    Bengali has composed vs decomposed forms that look identical but have different Unicode:
+    - 09dc (DDA) vs 09a1+09bc (DA + NUKTA)
+    - 09dd (DDHA) vs 09a2+09bc (DHA + NUKTA)
+    - 09df (YYA) vs 09af+09bc (YA + NUKTA)
+    """
+    import unicodedata
+    if not text:
+        return ''
+    # First apply NFC normalization
+    text = unicodedata.normalize('NFC', text)
+    # Convert composed Bengali chars to decomposed for consistent matching
+    replacements = {
+        '\u09dc': '\u09a1\u09bc',  # DDA -> DA + NUKTA
+        '\u09dd': '\u09a2\u09bc',  # DDHA -> DHA + NUKTA
+        '\u09df': '\u09af\u09bc',  # YYA -> YA + NUKTA
+    }
+    for composed, decomposed in replacements.items():
+        text = text.replace(composed, decomposed)
+    # Normalize whitespace
+    return ' '.join(text.split())
+
+
 def get_symbol_image(symbol_name, symbol_images):
     """Get image URL for a symbol name, returns empty string if not found"""
-    import unicodedata
     if not symbol_name:
         return ''
     # Try direct match first
     if symbol_name in symbol_images:
         return symbol_images[symbol_name]
     # Try normalized match (handles Bengali Unicode variations)
-    norm_name = unicodedata.normalize('NFC', symbol_name)
+    norm_name = normalize_bengali(symbol_name)
     for key, url in symbol_images.items():
-        if unicodedata.normalize('NFC', key) == norm_name:
+        if normalize_bengali(key) == norm_name:
             return url
     return ''
 
