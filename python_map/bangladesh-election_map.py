@@ -46,6 +46,7 @@ geojson_layer = folium.GeoJson(
 # --- 5. UPDATED CUSTOM UI & FIXES ---
 custom_ui = f"""
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
 <style>
     :root {{ --primary: #CC0000; --dark: #1a1a1a; }}
     body {{ font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f8fafc; overflow-x: hidden; }}
