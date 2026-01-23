@@ -21,10 +21,10 @@ from pathlib import Path
 BASE_URL = "http://103.183.38.66"
 ELECTION_ID = 478  # 13th National Parliament Election (Feb 12, 2026)
 CANDIDATE_TYPE = 1  # Member of Parliament
-STATUS_ID = 12  # 12=Valid candidates (use None for all)
+STATUS_ID = 11  # 11=Finalized candidates (চূড়ান্ত)
 OUTPUT_FILE = "../python_map/candidates.csv"
 MAPPING_FILE = "district_division_mapping.json"
-SYMBOLS_FILE = "party_symbols.json"
+SYMBOL_IMAGES_FILE = "symbol_images.json"  # Symbol name → image URL mapping
 DELAY_SECONDS = 0.5  # Delay between API calls
 MAX_CANDIDATES = 15  # Max candidates per constituency (actual max is 14)
 
@@ -67,25 +67,27 @@ def load_division_mapping():
     return mapping
 
 
-def load_party_symbols():
-    """Load party name to symbol URL mapping"""
+def load_symbol_images():
+    """Load symbol name to image URL mapping (for major parties only)"""
     try:
-        with open(SYMBOLS_FILE, 'r', encoding='utf-8') as f:
+        with open(SYMBOL_IMAGES_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"Warning: {SYMBOLS_FILE} not found, using candidate photos")
+        print(f"Warning: {SYMBOL_IMAGES_FILE} not found, using candidate photos")
         return {}
 
 
-def get_symbol_for_party(party_name, party_symbols):
-    """Get symbol URL for a party, returns empty string if not found"""
+def get_symbol_image(symbol_name, symbol_images):
+    """Get image URL for a symbol name, returns empty string if not found"""
     import unicodedata
+    if not symbol_name:
+        return ''
     # Try direct match first
-    if party_name in party_symbols:
-        return party_symbols[party_name]
+    if symbol_name in symbol_images:
+        return symbol_images[symbol_name]
     # Try normalized match (handles Bengali Unicode variations)
-    norm_name = unicodedata.normalize('NFC', party_name)
-    for key, url in party_symbols.items():
+    norm_name = unicodedata.normalize('NFC', symbol_name)
+    for key, url in symbol_images.items():
         if unicodedata.normalize('NFC', key) == norm_name:
             return url
     return ''
@@ -133,19 +135,20 @@ def get_candidates(zilla_id, constituency_id):
 
 
 def parse_candidates_html(html):
-    """Parse HTML table rows to extract candidate data"""
+    """Parse HTML table rows to extract candidate data including symbol names"""
     soup = BeautifulSoup(html, 'html.parser')
     candidates = []
 
     for row in soup.find_all('tr'):
         # Only get <td> elements (serial number is <th>)
         cols = row.find_all('td')
-        if len(cols) >= 3:
-            # Column structure (td only): [0]=Name, [1]=Photo, [2]=Party, ...
+        if len(cols) >= 4:
+            # Column structure (td only): [0]=Name, [1]=Photo, [2]=Party, [3]=Symbol
             name = cols[0].get_text(strip=True)
             party = cols[2].get_text(strip=True)
+            symbol = cols[3].get_text(strip=True)  # NEW: Election symbol name
 
-            # Extract image URL
+            # Extract image URL (candidate photo)
             img_tag = cols[1].find('img')
             img_url = img_tag.get('src', '') if img_tag else ''
 
@@ -153,6 +156,7 @@ def parse_candidates_html(html):
                 candidates.append({
                     'name': name,
                     'party': party,
+                    'symbol': symbol,  # NEW
                     'img': img_url
                 })
 
@@ -199,10 +203,10 @@ def main():
     division_mapping = load_division_mapping()
     print(f"✓ Loaded mapping for {len(division_mapping)} districts")
 
-    # Load party symbols
-    print("\nLoading party symbols...")
-    party_symbols = load_party_symbols()
-    print(f"✓ Loaded {len(party_symbols)} party symbol mappings")
+    # Load symbol images mapping
+    print("\nLoading symbol images mapping...")
+    symbol_images = load_symbol_images()
+    print(f"✓ Loaded {len(symbol_images)} symbol image mappings")
 
     # Fetch all districts
     print("\nFetching districts...")
@@ -264,16 +268,19 @@ def main():
             for j in range(MAX_CANDIDATES):
                 if j < len(candidates):
                     party = candidates[j]['party']
-                    # Use party symbol if available, otherwise use candidate photo
-                    symbol_url = get_symbol_for_party(party, party_symbols)
-                    img_url = symbol_url if symbol_url else candidates[j]['img']
+                    symbol = candidates[j].get('symbol', '')
+                    # Use symbol image if available, otherwise use candidate photo
+                    symbol_img = get_symbol_image(symbol, symbol_images)
+                    img_url = symbol_img if symbol_img else candidates[j]['img']
 
                     row[f'Candidate_{j+1}'] = candidates[j]['name']
                     row[f'Party_{j+1}'] = party
+                    row[f'Symbol_{j+1}'] = symbol  # NEW: Symbol name
                     row[f'Img_{j+1}'] = img_url
                 else:
                     row[f'Candidate_{j+1}'] = ''
                     row[f'Party_{j+1}'] = ''
+                    row[f'Symbol_{j+1}'] = ''  # NEW
                     row[f'Img_{j+1}'] = ''
 
             all_rows.append(row)
@@ -283,9 +290,9 @@ def main():
         'Districts', 'District Name Clean', 'Electoral Name Clean',
         'constituency', 'url', 'parent_district', 'divisions',
     ]
-    # Add candidate columns dynamically
+    # Add candidate columns dynamically (including Symbol)
     for i in range(1, MAX_CANDIDATES + 1):
-        columns.extend([f'Candidate_{i}', f'Party_{i}', f'Img_{i}'])
+        columns.extend([f'Candidate_{i}', f'Party_{i}', f'Symbol_{i}', f'Img_{i}'])
 
     df = pd.DataFrame(all_rows, columns=columns)
 

@@ -185,6 +185,7 @@ custom_ui = f"""
                 for(let i=1; i<=15; i++) {{
                     const name = seat['Candidate_' + i];
                     const party = seat['Party_' + i] || '';
+                    const symbol = seat['Symbol_' + i] || '';
                     const img = seat['Img_' + i] || 'https://placehold.co/100x100?text=Marka';
                     if(name && name !== 'N/A') {{
                         html += `
@@ -192,6 +193,7 @@ custom_ui = f"""
                             <img src="${{img}}" style="width:50px; height:50px; object-fit:contain; margin-bottom:5px;">
                             <div style="font-size:10px; font-weight:700; color:var(--dark);">${{name}}</div>
                             <div style="font-size:8px; color:#666; margin-top:2px;">${{party}}</div>
+                            ${{symbol ? `<div style="font-size:7px; color:#888; margin-top:2px;">${{symbol}}</div>` : ''}}
                         </div>`;
                     }}
                 }}
