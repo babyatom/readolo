@@ -48,8 +48,30 @@ custom_ui = f"""
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
 <style>
-    :root {{ --primary: #CC0000; --dark: #1a1a1a; }}
+    :root {{ --primary: #CC0000; --dark: #1a1a1a; --abc-dark: #1a1a1a; --abc-red: #CC0000; }}
     body {{ font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #f8fafc; overflow-x: hidden; }}
+
+    /* Override Bootstrap interference with navbar/footer */
+    .navbar {{ height: 80px !important; display: flex !important; align-items: center !important; background: #fff !important; border-bottom: 1px solid #eee !important; }}
+    .navbar .container {{ display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; max-width: 1100px !important; margin: 0 auto !important; padding: 0 2rem !important; }}
+    .logo {{ font-weight: 700 !important; font-size: 1.4rem !important; letter-spacing: -1px !important; }}
+    .logo span {{ color: var(--abc-red) !important; font-weight: 300 !important; }}
+    .nav-links {{ display: flex !important; list-style: none !important; align-items: center !important; margin: 0 !important; padding: 0 !important; }}
+    .nav-links li a {{ text-decoration: none !important; color: var(--abc-dark) !important; margin-left: 2rem !important; font-weight: 500 !important; font-size: 0.9rem !important; }}
+
+    /* Footer overrides */
+    .main-footer {{ background: var(--abc-dark) !important; color: #fff !important; padding: 80px 0 40px 0 !important; }}
+    .main-footer .container {{ max-width: 1100px !important; margin: 0 auto !important; padding: 0 2rem !important; }}
+    .footer-grid {{ display: grid !important; grid-template-columns: 2fr 1fr 1fr 1.5fr !important; gap: 4rem !important; padding-bottom: 60px !important; border-bottom: 1px solid #333 !important; }}
+    .footer-brand .logo.light {{ color: #fff !important; font-size: 1.4rem !important; margin-bottom: 1.5rem !important; }}
+    .footer-brand p {{ color: #aaa !important; font-size: 0.95rem !important; }}
+    .footer-links h4 {{ font-size: 1rem !important; margin-bottom: 1.5rem !important; text-transform: uppercase !important; letter-spacing: 1px !important; color: var(--abc-red) !important; }}
+    .footer-links ul {{ list-style: none !important; padding: 0 !important; margin: 0 !important; }}
+    .footer-links ul li {{ margin-bottom: 0.8rem !important; }}
+    .footer-links ul li a {{ color: #ccc !important; text-decoration: none !important; font-size: 0.9rem !important; }}
+    .footer-links p {{ color: #ccc !important; font-size: 0.9rem !important; }}
+    .footer-bottom {{ display: flex !important; justify-content: space-between !important; padding-top: 30px !important; font-size: 0.85rem !important; color: #666 !important; }}
+    .legal-links a {{ color: #666 !important; text-decoration: none !important; margin-left: 20px !important; }}
 
     .page-container {{ max-width: 1000px; margin: 0 auto; padding: 20px; }}
 
