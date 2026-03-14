@@ -27,4 +27,28 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Run AFTER components load
     injectEmail();
+
+    // Subtle reveal animations on scroll
+    const revealEls = document.querySelectorAll('.reveal');
+    if (revealEls.length > 0 && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.15 }
+        );
+
+        revealEls.forEach((el, index) => {
+            if (index % 3 === 1) el.classList.add('reveal-delay-1');
+            if (index % 3 === 2) el.classList.add('reveal-delay-2');
+            observer.observe(el);
+        });
+    } else {
+        revealEls.forEach((el) => el.classList.add('in-view'));
+    }
 });
