@@ -51,4 +51,36 @@ window.addEventListener('DOMContentLoaded', async () => {
     } else {
         revealEls.forEach((el) => el.classList.add('in-view'));
     }
+
+    // Contact form AJAX submission (Formspree)
+    const contactForm = document.getElementById('contact-form');
+    const formStatus = document.getElementById('form-status');
+    if (contactForm && formStatus) {
+        contactForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            formStatus.textContent = 'Sending...';
+            formStatus.style.color = '#555';
+
+            try {
+                const formData = new FormData(contactForm);
+                const response = await fetch(contactForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.href = '/thank-you.html';
+                } else {
+                    formStatus.textContent = 'Something went wrong. Please try again or email hello@readolo.com.';
+                    formStatus.style.color = '#CC0000';
+                }
+            } catch (error) {
+                formStatus.textContent = 'Network error. Please try again or email hello@readolo.com.';
+                formStatus.style.color = '#CC0000';
+            }
+        });
+    }
 });
